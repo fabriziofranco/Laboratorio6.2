@@ -1,6 +1,5 @@
 import json
 import operator
-
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
@@ -8,6 +7,8 @@ from nltk.stem import SnowballStemmer
 nltk.download('stopwords')
 nltk.download('punkt')
 stemmer = SnowballStemmer('spanish')
+
+index_generated = nltk.defaultdict(list)
 
 
 def preprocessFile(file_name):
@@ -62,4 +63,48 @@ def build_inverted_index():
     return index
 
 
-build_inverted_index()
+def L(word):
+    root = stemmer.stem(word)
+    if root in index_generated:
+        return index_generated[root]
+
+
+def OR(*listas):
+    or_result = []
+    for books in listas:
+        for book in books:
+            if book not in or_result:
+                or_result.append(book)
+    return or_result
+
+
+def AND(*listas):
+    and_result = []
+    counters = nltk.defaultdict(int)
+    for books in listas:
+        for book in books:
+            counters[book] += 1
+    for key, value in counters.items():
+        if len(listas) == value:  # Esta en todas las listas
+            and_result.append(key)
+    return and_result
+
+
+def ANDNOT(conjunto1, conjunto2):  # Resta de conjuntos
+    and_not_result = []
+    for book in conjunto1:
+        if book not in conjunto2:
+            and_not_result.append(book)
+    return and_not_result
+
+
+def main():
+    global index_generated
+    index_generated = build_inverted_index()
+    print(ANDNOT(AND(L("Frodo"), L("Mordor")), L("anillo")))
+    print(AND(L("anillo"), L("enano"), L("elfo")))
+    print(OR(AND(L("hobbit"), L("Gandalf"), L("Gollum")), L("Saruman")))
+
+
+if __name__ == '__main__':
+    main()
